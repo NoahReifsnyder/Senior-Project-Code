@@ -24,6 +24,7 @@
 
 # Import our modules######################################################################
 import getXML
+import GC
 ##########################################################################################
 
 import MalmoPython
@@ -120,25 +121,25 @@ print "Mission running ",
 
 # Loop until mission ends:
 if role==0:
-    pflag=0
     while world_state.is_mission_running:
+        GC.pFlag=0
         world_state = agent_host.getWorldState()
         if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
             if "Nearby" in ob:
                 entities = [EntityInfo(**k) for k in ob["Nearby"]]
+                entities.pop(0)
                 for ent in entities:
-                    print (ent.name)
                     if ent.name=="Typhoonizm":
                         foundPlayer()
-                        flag=1
+                        GC.pFlag=1
             if "Player" in ob:
                 far_entities = [EntityInfo(**k) for k in ob["Player"]]
         
-            if flag==0:
+            if GC.pFlag==0:
                 lostPlayer()
-                flag=2
+                GC.pFlag=2
 else:
     while world_state.is_mission_running:
         sys.stdout.write(".")
