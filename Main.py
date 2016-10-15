@@ -22,9 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # ------------------------------------------------------------------------------------------------
 
-# Import our modules######################################################################
+# Import our modules #####################################################################
 import getXML
 import GC
+import Entity #basically just a set of local variables for position of self, player, or a mob.
 ##########################################################################################
 
 import MalmoPython
@@ -35,15 +36,19 @@ import json
 from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, name')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, "")
-
+pEntity=Entity(0,0,0)
+self=Entity(0,0,0)
+del self.flag
 
 
 def foundPlayer():
     agent_host.sendCommand("Jump 1")
     print("found")
     return
+def findPlayer():
+    return
+
 def lostPlayer():
-    agent_host.sendCommand("Jump 0")
     print("lost")
     return
 
@@ -128,18 +133,36 @@ if role==0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
             if "Nearby" in ob:
-                entities = [EntityInfo(**k) for k in ob["Nearby"]]
-                entities.pop(0)
+            entities = [EntityInfo(**k) for k in ob["Nearby"]]
+            self.x=entities[0].x
+            self.y=entities[0].y
+            self.z=entities[0].z
                 for ent in entities:
                     if ent.name=="Typhoonizm":
-                        foundPlayer()
-                        GC.pFlag=1
+                        pEntity.flag=2
+                        pEntity.x=ent.x
+                        pEntity.y=ent.y
+                        pEntity.z=ent.z
+            
+        
+                        
             if "Player" in ob:
-                far_entities = [EntityInfo(**k) for k in ob["Player"]]
+                entities = [EntityInfo(**k) for k in ob["Player"]]
+                for ent in entities:
+                    if ent.name="Typhoonizm":
+                        pEntity.flag=1
+                        pEntity.x=ent.x
+                        pEntity.y=ent.y
+                        pEntity.z=ent.z
         
             if GC.pFlag==0:
                 lostPlayer()
-                GC.pFlag=2
+            elif GC.pFlag==1:
+                findPlayer()
+            elif GC.pFlag==2():
+                foundPlayer()
+
+
 else:
     while world_state.is_mission_running:
         sys.stdout.write(".")
