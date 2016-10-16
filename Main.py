@@ -25,7 +25,7 @@
 # Import our modules #####################################################################
 import getXML
 import GC
-import Entity #basically just a set of local variables for position of self, player, or a mob.
+from Entity import Entity #basically just a set of local variables for position of self, player, or a mob.
 ##########################################################################################
 
 import MalmoPython
@@ -33,12 +33,15 @@ import os
 import sys
 import time
 import json
+import math
 from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, name')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, "")
-pEntity=Entity(0,0,0)
-self=Entity(0,0,0)
+
+pEntity=Entity(0,0,0,0)
+self=Entity(0,0,0,0)
 del self.flag
+
 
 
 def foundPlayer():
@@ -46,13 +49,30 @@ def foundPlayer():
     print("found")
     return
 def findPlayer():
+    agent_host.sendCommand("Jump 0")
+    setYaw()
     return
 
 def lostPlayer():
     print("lost")
     return
 
-
+def setYaw():
+    x=pEntity.x-self.x
+    z=pEntity.z-self.z
+    dist=(x**2+z**2)**.5
+    angle=0
+    if (z!=0):
+        angle=(math.atan(float(x)/float(z)))*(180/math.pi)
+        if (z<0):
+            angle+=180
+    else:
+        if(x>0):
+            angle=-90
+        else:
+            angle=90
+    agent_host.sendCommand(
+    print(angle)
 
 
 
@@ -133,10 +153,10 @@ if role==0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
             if "Nearby" in ob:
-            entities = [EntityInfo(**k) for k in ob["Nearby"]]
-            self.x=entities[0].x
-            self.y=entities[0].y
-            self.z=entities[0].z
+                entities = [EntityInfo(**k) for k in ob["Nearby"]]
+                self.x=entities[0].x
+                self.y=entities[0].y
+                self.z=entities[0].z
                 for ent in entities:
                     if ent.name=="Typhoonizm":
                         pEntity.flag=2
@@ -149,17 +169,17 @@ if role==0:
             if "Player" in ob:
                 entities = [EntityInfo(**k) for k in ob["Player"]]
                 for ent in entities:
-                    if ent.name="Typhoonizm":
+                    if ent.name=="Typhoonizm":
                         pEntity.flag=1
                         pEntity.x=ent.x
                         pEntity.y=ent.y
                         pEntity.z=ent.z
         
-            if GC.pFlag==0:
+            if pEntity.flag==0:
                 lostPlayer()
-            elif GC.pFlag==1:
+            elif pEntity.flag==1:
                 findPlayer()
-            elif GC.pFlag==2():
+            elif pEntity.flag==2:
                 foundPlayer()
 
 

@@ -1,7 +1,7 @@
 class Entity:
     
-    def__init__(self, x, y, z):
-        flag=0
-        x=x
-        y=y
-        z=z
+    def __init__(self, flag, x, y, z):
+        self.flag=flag
+        self.x=x
+        self.y=y
+        self.z=z
