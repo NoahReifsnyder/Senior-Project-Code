@@ -40,7 +40,7 @@ from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, name')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, "")
 
-pEntity=Entity(0, 0, 0, 0)
+pEntity = Entity(0, 0, 0, 0)
 self = Entity(0, 0, 0, 0)
 del self.flag
 
@@ -52,23 +52,34 @@ def found_player():
 
 
 def find_player(grid):
-    simple_grid = [[simplify_grid(grid) for i in range(-10, 10)] for j in range(-10, 10)]
+    #take the one dimensional grid ordered x by z and then by y value and create a 2D array from it
+    #if the player can walk there, we want a 1 and if player can't walk there we want a 0
+    #player will be at 0,0
+    simple_grid = [[simplify_grid(grid, x, z) for x in range(-10, 10)] for z in range(-10, 10)]
+    #set goal coordinate
     simple_grid[pEntity.x][pEntity.z] = 3
     return Follow.A_star_search(0, 0, simple_grid)
 
 
-def simplify_grid(grid, i, j):
-    if grid[get_grid_coordinate(grid, i, j, -1, 21)] != "water" and grid[get_grid_coordinate(grid, i, j, -1, 21)] != "air" and grid[get_grid_coordinate(grid, i, j, -1, 21)] != "lava":
-        if grid[get_grid_coordinate(grid, i, j, 0, 21)] == "air" and grid[get_grid_coordinate(grid, i, j, 1, 21)] == "air":
+def simplify_grid(grid, x, z):
+    #check in front
+    if grid[get_grid_coordinate(x, z, -1, 10)] != "water" and grid[get_grid_coordinate(x, z, -1, 10)] != "air" and grid[get_grid_coordinate(x, z, -1, 10)] != "lava":
+        #check height in clear
+        if grid[get_grid_coordinate(x, z, 0, 10)] == "air" and grid[get_grid_coordinate(x, z, 1, 10)] == "air":
                 return 1
     return 0
 
 
-def get_grid_coordinate(grid, x, z, y, dim):
+def get_grid_coordinate(x, z, y, pos):
+    #pos: max x and z dimensions in positive direction
+    dim = pos * 2 + 1
+    #adjust for negative values
     y += 1
     x += 10
     y += 10
-    return grid[x + z * dim + y * (dim * dim)]
+
+    #convert 3d coordinates to 1D array coordinates and return value
+    return x + z * dim + y * (dim * dim)
 
 
 def lost_player():

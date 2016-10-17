@@ -66,19 +66,19 @@ def get_child_nodes(node, curr_nodes, already_visited_nodes, grid):
     valid_child_nodes = []
     
     # add each action
-    if x != len(grid[y]) and grid[x+1, y] == 1:
+    if x != len(grid[y]) and grid[x + 1, y] == 1:
         # make a copy just to make sure we are not modifying some
         # node some other place
         e_actions = copy.deepcopy(node.actions_taken) 
         e_actions.append("movewest 1")
-        east_node = Node((x+1, y), grid,node,e_actions)
+        east_node = Node((x + 1, y), grid,node,e_actions)
         valid_child_nodes.append(east_node) #east node
     if x != 0 and grid[x - 1, y] == 1:
         w_actions = copy.deepcopy(node.actions_taken)
         w_actions.append("moveeast 1")
-        west_node = Node((x-1,y),grid,node,w_actions)
+        west_node = Node((x - 1,y),grid,node,w_actions)
         valid_child_nodes.append(west_node) # west node
-    if y != len(grid) and grid[x, y+1] == 1:
+    if y != len(grid) and grid[x, y + 1] == 1:
         s_actions = copy.deepcopy(node.actions_taken)
         s_actions.append("movesouth 1")
         south_node = Node((x, y + 1),grid,node,s_actions)
@@ -86,7 +86,7 @@ def get_child_nodes(node, curr_nodes, already_visited_nodes, grid):
     if y != 0 and grid[x, y - 1] == 1:
         n_actions = copy.deepcopy(node.actions_taken)
         n_actions.append("movenorth 1")
-        north_node = Node((x,y-1),grid,node,n_actions)
+        north_node = Node((x, y - 1),grid,node,n_actions)
         valid_child_nodes.append(north_node) # west node
 
     # filter out anything that is already in curr_nodes (may not be necessary)
@@ -104,6 +104,7 @@ def A_star_search(playerx, playery, grid):
     # also find location of redstone block, save as goal loc
     agent_loc_x = 0
     agent_loc_y = 0
+
     goal_x = playerx
     goal_y = playery
 
