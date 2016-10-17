@@ -34,49 +34,62 @@ import sys
 import time
 import json
 import math
+import Follow
+
 from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, name')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, "")
 
-pEntity=Entity(0,0,0,0)
-self=Entity(0,0,0,0)
+pEntity=Entity(0, 0, 0, 0)
+self = Entity(0, 0, 0, 0)
 del self.flag
 
 
-
-def foundPlayer():
+def found_player():
     agent_host.sendCommand("Jump 1")
     print("found")
     return
-def findPlayer():
-    agent_host.sendCommand("Jump 0")
-    setYaw()
-    return
 
-def lostPlayer():
+
+def find_player(grid):
+    simple_grid = [[simplify_grid(grid) for i in range(-10, 10)] for j in range(-10, 10)]
+    simple_grid[pEntity.x][pEntity.z] = 3
+    return Follow.A_star_search(0, 0, simple_grid)
+
+
+def simplify_grid(grid, i, j):
+    if grid[get_grid_coordinate(grid, i, j, -1, 21)] != "water" and grid[get_grid_coordinate(grid, i, j, -1, 21)] != "air" and grid[get_grid_coordinate(grid, i, j, -1, 21)] != "lava":
+        if grid[get_grid_coordinate(grid, i, j, 0, 21)] == "air" and grid[get_grid_coordinate(grid, i, j, 1, 21)] == "air":
+                return 1
+    return 0
+
+
+def get_grid_coordinate(grid, x, z, y, dim):
+    y += 1
+    x += 10
+    y += 10
+    return grid[x + z * dim + y * (dim * dim)]
+
+
+def lost_player():
     print("lost")
     return
 
-def setYaw():
-    x=pEntity.x-self.x
-    z=pEntity.z-self.z
-    dist=(x**2+z**2)**.5
-    angle=0
-    if (z!=0):
-        angle=(math.atan(float(x)/float(z)))*(180/math.pi)
-        if (z<0):
-            angle+=180
+
+def set_yaw():
+    x = pEntity.x - self.x
+    z = pEntity.z - self.z
+    dist = (x**2+z**2)**.5
+    angle = 0
+    if z != 0:
+        angle = (math.atan(float(x)/float(z)))*(180/math.pi)
+        if z < 0:
+            angle += 180
     else:
-        if(x>0):
-            angle=-90
+        if x > 0:
+            angle -= 90
         else:
-            angle=90
-    agent_host.sendCommand(
-    print(angle)
-
-
-
-
+            angle = 90
 
 # Create default Malmo objects:
 
@@ -86,7 +99,7 @@ agent_host.addOptionalIntArgument( "role,r", "For multi-agent missions, the role
 try:
     agent_host.parse( sys.argv )
 except RuntimeError as e:
-    print 'ERROR:',e
+    print 'ERROR:', e
     print agent_host.getUsage()
     exit(1)
 if agent_host.receivedArgument("help"):
@@ -94,15 +107,15 @@ if agent_host.receivedArgument("help"):
     exit(0)
 
 role = agent_host.getIntArgument("role")
-print "Will run as role",role
+print "Will run as role", role
 
 agent_host.setObservationsPolicy(MalmoPython.ObservationsPolicy.LATEST_OBSERVATION_ONLY)
 
 # Create a client pool here - this assumes two local mods with default ports,
 # but you could have two mods on different machines, and specify their IP address here.
 client_pool = MalmoPython.ClientPool()
-client_pool.add( MalmoPython.ClientInfo( "127.0.0.1", 10000 ) )
-client_pool.add( MalmoPython.ClientInfo( "127.0.0.1", 10001 ) )
+client_pool.add( MalmoPython.ClientInfo("127.0.0.1", 10000))
+client_pool.add( MalmoPython.ClientInfo("127.0.0.1", 10001))
 
 chat_frequency = 30 # if we send chat messages too frequently the agent will be disconnected for spamming
 num_steps_since_last_chat = 0
@@ -139,48 +152,48 @@ while not world_state.has_mission_begun:
 
 print
 print "Mission running ",
-
 #Enter some hard coded commands in here
 
 
-
 # Loop until mission ends:
-if role==0:
+if role == 0:
+    plan = None
     while world_state.is_mission_running:
-        GC.pFlag=0
+        GC.pFlag = 0
         world_state = agent_host.getWorldState()
         if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
             if "Nearby" in ob:
                 entities = [EntityInfo(**k) for k in ob["Nearby"]]
-                self.x=entities[0].x
-                self.y=entities[0].y
-                self.z=entities[0].z
+                self.x = entities[0].x
+                self.y = entities[0].y
+                self.z = entities[0].z
                 for ent in entities:
-                    if ent.name=="Typhoonizm":
-                        pEntity.flag=2
-                        pEntity.x=ent.x
-                        pEntity.y=ent.y
-                        pEntity.z=ent.z
-            
-        
-                        
+                    if ent.name == "Typhoonizm":
+                        pEntity.flag = 2
+                        pEntity.x = ent.x
+                        pEntity.y = ent.y
+                        pEntity.z = ent.z
+
             if "Player" in ob:
                 entities = [EntityInfo(**k) for k in ob["Player"]]
                 for ent in entities:
-                    if ent.name=="Typhoonizm":
-                        pEntity.flag=1
-                        pEntity.x=ent.x
-                        pEntity.y=ent.y
-                        pEntity.z=ent.z
-        
-            if pEntity.flag==0:
-                lostPlayer()
-            elif pEntity.flag==1:
-                findPlayer()
-            elif pEntity.flag==2:
-                foundPlayer()
+
+                    if ent.name == "Typhoonizm":
+                        pEntity.flag = 1
+                        pEntity.x = ent.x
+                        pEntity.y = ent.y
+                        pEntity.z = ent.z
+
+            if pEntity.flag == 0:
+                lost_player()
+            elif pEntity.flag == 1:
+                plan = find_player(ob.get(u'floorGrid', 0))
+                plan.reverse()
+                agent_host.sendCommand(plan.pop())
+            elif pEntity.flag == 2:
+                found_player()
 
 
 else:
@@ -190,12 +203,5 @@ else:
         world_state = agent_host.getWorldState()
         for error in world_state.errors:
             print "Error:",error.text
-
-
-print
 print "Mission ended"
 # Mission has ended.
-
-
-
-
