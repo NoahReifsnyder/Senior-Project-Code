@@ -87,20 +87,6 @@ def lost_player():
     return
 
 
-def set_yaw():
-    x = pEntity.x - self.x
-    z = pEntity.z - self.z
-    dist = (x**2+z**2)**.5
-    angle = 0
-    if z != 0:
-        angle = (math.atan(float(x)/float(z)))*(180/math.pi)
-        if z < 0:
-            angle += 180
-    else:
-        if x > 0:
-            angle -= 90
-        else:
-            angle = 90
 
 # Create default Malmo objects:
 
