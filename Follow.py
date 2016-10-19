@@ -99,6 +99,9 @@ def get_child_nodes(node, curr_nodes, already_visited_nodes, grid):
     return valid_child_nodes
 
 
+def follow(playerx, playery, grid):
+    
+
 def A_star_search(playerx, playery, grid):
     # find the location of the emerald block, record this as agent's position and start
     # also find location of redstone block, save as goal loc

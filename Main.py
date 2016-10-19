@@ -57,7 +57,7 @@ def find_player(grid):
     #player will be at 0,0
     simple_grid = [[simplify_grid(grid, x, z) for x in range(-10, 10)] for z in range(-10, 10)]
     #set goal coordinate
-    simple_grid[pEntity.x][pEntity.z] = 3
+    simple_grid[int(pEntity.x)][int(pEntity.z)] = 3
     return Follow.A_star_search(0, 0, simple_grid)
 
 
