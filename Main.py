@@ -76,7 +76,7 @@ def get_grid_coordinate(x, z, y, pos):
     #adjust for negative values
     y += 1
     x += 10
-    y += 10
+    z += 10
 
     #convert 3d coordinates to 1D array coordinates and return value
     return x + z * dim + y * (dim * dim)
