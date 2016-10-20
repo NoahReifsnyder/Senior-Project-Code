@@ -25,7 +25,7 @@
 # Import our modules #####################################################################
 import getXML
 import GC
-from Entity import Entity #basically just a set of local variables for position of self, player, or a mob.
+from Entity import Entity #basically just a set of local variables for position of AI, player, or a mob.
 ##########################################################################################
 
 import MalmoPython
@@ -41,8 +41,10 @@ EntityInfo = namedtuple('EntityInfo', 'x, y, z, name')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, "")
 
 pEntity = Entity(0, 0, 0, 0)
-self = Entity(0, 0, 0, 0)
-del self.flag
+AI = Entity(0, 0, 0, 0)
+del AI.flag
+AI.yaw=0
+
 
 
 def found_player():
@@ -57,8 +59,10 @@ def find_player(grid):
     #player will be at 0,0
     simple_grid = [[simplify_grid(grid, x, z) for x in range(-10, 10)] for z in range(-10, 10)]
     #set goal coordinate
+    goalx=pEntity.x-AI.x
+    goalz=pEntity.z-AI.z
     simple_grid[int(pEntity.x)][int(pEntity.z)] = 3
-    return Follow.A_star_search(0, 0, simple_grid)
+    return Follow.A_star_search(goalx, goalz, simple_grid)
 
 
 def simplify_grid(grid, x, z):
@@ -154,6 +158,7 @@ print "Mission running ",
 
 # Loop until mission ends:
 if role == 0:
+    agent_host.sendCommand("setYaw 90")
     plan = None
     while world_state.is_mission_running:
         GC.pFlag = 0
@@ -161,17 +166,20 @@ if role == 0:
         if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
+            if "Yaw" in ob:
+                AI.yaw = ob[u'Yaw']
             if "Nearby" in ob:
                 entities = [EntityInfo(**k) for k in ob["Nearby"]]
-                self.x = entities[0].x
-                self.y = entities[0].y
-                self.z = entities[0].z
+                AI.x = entities[0].x
+                AI.y = entities[0].y
+                AI.z = entities[0].z
                 for ent in entities:
                     if ent.name == "Typhoonizm":
                         pEntity.flag = 2
                         pEntity.x = ent.x
                         pEntity.y = ent.y
                         pEntity.z = ent.z
+        
 
             if "Player" in ob:
                 entities = [EntityInfo(**k) for k in ob["Player"]]
@@ -185,10 +193,10 @@ if role == 0:
 
             if pEntity.flag == 0:
                 lost_player()
-            elif pEntity.flag == 1:
-                plan = find_player(ob.get(u'floorGrid', 0))
-                plan.reverse()
-                agent_host.sendCommand(plan.pop())
+            #elif pEntity.flag == 1:
+                #plan = find_player(ob.get(u'floorGrid', 0))
+                #plan.reverse()
+                #agent_host.sendCommand(plan.pop())
             elif pEntity.flag == 2:
                 found_player()
 

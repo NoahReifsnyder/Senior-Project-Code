@@ -49,6 +49,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <Range name="Mob" xrange="10" yrange="2" zrange="10" update_frequency="100"/>
     <Range name="Player" xrange="100" yrange="2" zrange="100" update_frequency="100"/>
     </ObservationFromNearbyEntities>
+    <ObservationFromFullStats/>
     <ObservationFromGrid>
     <Grid name="floorGrid">
     <min x="-10" y="-1" z="-10"/>
