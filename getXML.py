@@ -56,7 +56,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <max x="10" y="1" z="10"/>
     </Grid>
     </ObservationFromGrid>
-    <ContinuousMovementCommands turnSpeedDegs="840">
+    <ContinuousMovementCommands turnSpeedDegs="180">
     <ModifierList type="deny-list">
     <command>strafe</command>
     </ModifierList>

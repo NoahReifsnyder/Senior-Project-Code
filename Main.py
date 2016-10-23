@@ -26,6 +26,7 @@
 import getXML
 import GC
 from Entity import Entity #basically just a set of local variables for position of AI, player, or a mob.
+import Follow
 ##########################################################################################
 
 import MalmoPython
@@ -34,7 +35,8 @@ import sys
 import time
 import json
 import math
-import Follow
+from datetime import datetime
+
 
 from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, name')
@@ -53,16 +55,65 @@ def found_player():
     return
 
 
+def getYaw():
+    dx=pEntity.x-AI.x
+    dz=pEntity.z-AI.z
+    a=0
+    if(dz!=0):
+        a=math.atan(dx/dz)*180/math.pi
+    elif(dx<0):
+        a=-90
+    elif(dx>0):
+        a=90
+    a=-1*a
+    return a
+
+def turn(yaw):
+    velocity = 1
+    dyaw=(AI.yaw+180)-(yaw+180)
+    while(dyaw**2>.05):
+        agent_host.sendCommand("turn "+str(velocity))
+        while(dyaw<0):
+            #print AI.yaw
+            world_state = agent_host.getWorldState()
+            if world_state.number_of_observations_since_last_state > 0:
+                msg = world_state.observations[-1].text
+                ob = json.loads(msg)
+                if "Yaw" in ob:
+                    AI.yaw = ob[u'Yaw']
+                    dyaw=(AI.yaw+180)-(yaw+180)
+        velocity=float(velocity)/(-2)
+        agent_host.sendCommand("turn "+str(velocity))
+        while(dyaw>0):
+            #print AI.yaw
+            world_state = agent_host.getWorldState()
+            if world_state.number_of_observations_since_last_state > 0:
+                msg = world_state.observations[-1].text
+                ob = json.loads(msg)
+                if "Yaw" in ob:
+                    AI.yaw = ob[u'Yaw']
+                    dyaw=(AI.yaw+180)-(yaw+180)
+        
+        agent_host.sendCommand("turn 0")
+        velocity=float(velocity)/(-2)
+    print str(dyaw)+" "+str(AI.yaw)+" "+str(yaw)
+    
 def find_player(grid):
+    
+    simple_grid = [[simplify_grid(grid, x, z) for x in range(-10, 10)] for z in range(-10, 10)]
+    yaw=getYaw()
+    turn(yaw)
+    ctime=datetime.now().second
+    
     #take the one dimensional grid ordered x by z and then by y value and create a 2D array from it
     #if the player can walk there, we want a 1 and if player can't walk there we want a 0
     #player will be at 0,0
-    simple_grid = [[simplify_grid(grid, x, z) for x in range(-10, 10)] for z in range(-10, 10)]
+
     #set goal coordinate
     goalx=pEntity.x-AI.x
     goalz=pEntity.z-AI.z
     simple_grid[int(pEntity.x)][int(pEntity.z)] = 3
-    return Follow.A_star_search(goalx, goalz, simple_grid)
+    return 1#Follow.A_star_search(goalx, goalz, simple_grid)
 
 
 def simplify_grid(grid, x, z):
@@ -158,7 +209,6 @@ print "Mission running ",
 
 # Loop until mission ends:
 if role == 0:
-    agent_host.sendCommand("setYaw 90")
     plan = None
     while world_state.is_mission_running:
         GC.pFlag = 0
@@ -193,8 +243,8 @@ if role == 0:
 
             if pEntity.flag == 0:
                 lost_player()
-            #elif pEntity.flag == 1:
-                #plan = find_player(ob.get(u'floorGrid', 0))
+            elif pEntity.flag == 1:
+                find_player(ob.get(u'floorGrid', 0))
                 #plan.reverse()
                 #agent_host.sendCommand(plan.pop())
             elif pEntity.flag == 2:
