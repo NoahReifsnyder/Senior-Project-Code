@@ -43,6 +43,7 @@ EntityInfo = namedtuple('EntityInfo', 'x, y, z, name')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, "")
 
 pEntity = Entity(0, 0, 0, 0)
+pEntity.move=0
 AI = Entity(0, 0, 0, 0)
 del AI.flag
 AI.yaw=0
@@ -50,7 +51,8 @@ AI.yaw=0
 
 
 def found_player():
-    agent_host.sendCommand("Jump 1")
+    agent_host.sendCommand("Move 0")
+    pEntity.move=1
     print("found")
     return
 
@@ -65,13 +67,21 @@ def getYaw():
         a=-90
     elif(dx>0):
         a=90
+    if (dz<0):
+        if (dx<0):
+            a=a - 180
+        else:
+            a=a +180
     a=-1*a
     return a
+
 
 def turn(yaw):
     velocity = 1
     dyaw=(AI.yaw+180)-(yaw+180)
-    while(dyaw**2>.05):
+    i=0
+    while(i<4):
+        i=i+1
         agent_host.sendCommand("turn "+str(velocity))
         while(dyaw<0):
             #print AI.yaw
@@ -82,7 +92,7 @@ def turn(yaw):
                 if "Yaw" in ob:
                     AI.yaw = ob[u'Yaw']
                     dyaw=(AI.yaw+180)-(yaw+180)
-        velocity=float(velocity)/(-2)
+        velocity=float(velocity)/(-3)
         agent_host.sendCommand("turn "+str(velocity))
         while(dyaw>0):
             #print AI.yaw
@@ -95,7 +105,7 @@ def turn(yaw):
                     dyaw=(AI.yaw+180)-(yaw+180)
         
         agent_host.sendCommand("turn 0")
-        velocity=float(velocity)/(-2)
+        velocity=float(velocity)/(-3)
     print str(dyaw)+" "+str(AI.yaw)+" "+str(yaw)
     
 def find_player(grid):
@@ -103,7 +113,6 @@ def find_player(grid):
     simple_grid = [[simplify_grid(grid, x, z) for x in range(-10, 10)] for z in range(-10, 10)]
     yaw=getYaw()
     turn(yaw)
-    ctime=datetime.now().second
     
     #take the one dimensional grid ordered x by z and then by y value and create a 2D array from it
     #if the player can walk there, we want a 1 and if player can't walk there we want a 0
@@ -112,7 +121,7 @@ def find_player(grid):
     #set goal coordinate
     goalx=pEntity.x-AI.x
     goalz=pEntity.z-AI.z
-    simple_grid[int(pEntity.x)][int(pEntity.z)] = 3
+    #simple_grid[int(pEntity.x)][int(pEntity.z)] = 3 This line broke code. Because moving and not updating.
     return 1#Follow.A_star_search(goalx, goalz, simple_grid)
 
 
@@ -210,8 +219,9 @@ print "Mission running ",
 # Loop until mission ends:
 if role == 0:
     plan = None
+    AI.yaw=0
     while world_state.is_mission_running:
-        GC.pFlag = 0
+        pEntity.flag=3
         world_state = agent_host.getWorldState()
         if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
@@ -244,7 +254,13 @@ if role == 0:
             if pEntity.flag == 0:
                 lost_player()
             elif pEntity.flag == 1:
-                find_player(ob.get(u'floorGrid', 0))
+                if(pEntity.move==0):
+                    agent_host.sendCommand("Move 1")
+                    pEntity.move=1
+                yaw=getYaw()
+                dyaw=(AI.yaw+180)-(yaw+180)
+                if(dyaw**2>.01):
+                    find_player(ob.get(u'floorGrid', 0))
                 #plan.reverse()
                 #agent_host.sendCommand(plan.pop())
             elif pEntity.flag == 2:
