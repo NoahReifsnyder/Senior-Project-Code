@@ -52,7 +52,7 @@ AI.yaw=0
 
 def found_player():
     agent_host.sendCommand("Move 0")
-    pEntity.move=1
+    pEntity.move=0
     print("found")
     return
 
@@ -77,10 +77,11 @@ def getYaw():
 
 
 def turn(yaw):
+    agent_host.sendCommand("Move 0")
     velocity = 1
     dyaw=(AI.yaw+180)-(yaw+180)
     i=0
-    while(i<4):
+    while(i<3):
         i=i+1
         agent_host.sendCommand("turn "+str(velocity))
         while(dyaw<0):
@@ -92,7 +93,7 @@ def turn(yaw):
                 if "Yaw" in ob:
                     AI.yaw = ob[u'Yaw']
                     dyaw=(AI.yaw+180)-(yaw+180)
-        velocity=float(velocity)/(-3)
+        velocity=float(velocity)/(-2)
         agent_host.sendCommand("turn "+str(velocity))
         while(dyaw>0):
             #print AI.yaw
@@ -105,8 +106,10 @@ def turn(yaw):
                     dyaw=(AI.yaw+180)-(yaw+180)
         
         agent_host.sendCommand("turn 0")
-        velocity=float(velocity)/(-3)
+        velocity=float(velocity)/(-2)
     print str(dyaw)+" "+str(AI.yaw)+" "+str(yaw)
+    agent_host.sendCommand("Move 1")
+
     
 def find_player(grid):
     
@@ -228,17 +231,6 @@ if role == 0:
             ob = json.loads(msg)
             if "Yaw" in ob:
                 AI.yaw = ob[u'Yaw']
-            if "Nearby" in ob:
-                entities = [EntityInfo(**k) for k in ob["Nearby"]]
-                AI.x = entities[0].x
-                AI.y = entities[0].y
-                AI.z = entities[0].z
-                for ent in entities:
-                    if ent.name == "Typhoonizm":
-                        pEntity.flag = 2
-                        pEntity.x = ent.x
-                        pEntity.y = ent.y
-                        pEntity.z = ent.z
         
 
             if "Player" in ob:
@@ -251,6 +243,18 @@ if role == 0:
                         pEntity.y = ent.y
                         pEntity.z = ent.z
 
+            if "Nearby" in ob:
+                entities = [EntityInfo(**k) for k in ob["Nearby"]]
+                AI.x = entities[0].x
+                AI.y = entities[0].y
+                AI.z = entities[0].z
+                for ent in entities:
+                    if ent.name == "Typhoonizm":
+                        pEntity.flag = 2
+                        pEntity.x = ent.x
+                        pEntity.y = ent.y
+                        pEntity.z = ent.z
+
             if pEntity.flag == 0:
                 lost_player()
             elif pEntity.flag == 1:
@@ -259,7 +263,7 @@ if role == 0:
                     pEntity.move=1
                 yaw=getYaw()
                 dyaw=(AI.yaw+180)-(yaw+180)
-                if(dyaw**2>.01):
+                if(dyaw**2>4):
                     find_player(ob.get(u'floorGrid', 0))
                 #plan.reverse()
                 #agent_host.sendCommand(plan.pop())
