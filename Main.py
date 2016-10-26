@@ -35,6 +35,7 @@ import sys
 import time
 import json
 import math
+import thread
 from datetime import datetime
 
 
@@ -185,7 +186,10 @@ chat_frequency = 30 # if we send chat messages too frequently the agent will be 
 num_steps_since_last_chat = 0
 
 my_mission = MalmoPython.MissionSpec(getXML.missionXML, True) #This loads the xml file, you could change True to variable to make sure the instance is valid before loading
-my_mission_record = MalmoPython.MissionRecordSpec()
+my_mission_record = MalmoPython.MissionRecordSpec("Following.tgz")
+
+#my_mission_record.recordMP4(120,1200000) # Attempt to record at 120fps
+
 unique_experiment_id = ""#if you want to record unique instances of the expirement
 # Attempt to start a mission:
 max_retries = 3
@@ -219,11 +223,11 @@ print "Mission running ",
 #Enter some hard coded commands in here
 
 
-# Loop until mission ends:
-if role == 0:
-    plan = None
-    AI.yaw=0
-    while world_state.is_mission_running:
+def Observe():
+    global pEntity
+    global AI
+    global agent_host
+    while True:
         pEntity.flag=3
         world_state = agent_host.getWorldState()
         if world_state.number_of_observations_since_last_state > 0:
@@ -232,17 +236,17 @@ if role == 0:
             if "Yaw" in ob:
                 AI.yaw = ob[u'Yaw']
         
-
+        
             if "Player" in ob:
                 entities = [EntityInfo(**k) for k in ob["Player"]]
                 for ent in entities:
-
+                    
                     if ent.name == "Typhoonizm":
                         pEntity.flag = 1
                         pEntity.x = ent.x
                         pEntity.y = ent.y
                         pEntity.z = ent.z
-
+    
             if "Nearby" in ob:
                 entities = [EntityInfo(**k) for k in ob["Nearby"]]
                 AI.x = entities[0].x
@@ -255,6 +259,18 @@ if role == 0:
                         pEntity.y = ent.y
                         pEntity.z = ent.z
 
+
+# Loop until mission ends:
+if role == 0:
+    thread.start_new_thread(Observe, ())
+    plan = None
+    AI.yaw=0
+    while world_state.is_mission_running:
+        pEntity.flag=3
+        world_state = agent_host.getWorldState()
+        if world_state.number_of_observations_since_last_state > 0:
+            msg = world_state.observations[-1].text
+            ob = json.loads(msg)
             if pEntity.flag == 0:
                 lost_player()
             elif pEntity.flag == 1:
@@ -279,4 +295,5 @@ else:
         for error in world_state.errors:
             print "Error:",error.text
 print "Mission ended"
-# Mission has ended.
+
+    # Mission has ended.

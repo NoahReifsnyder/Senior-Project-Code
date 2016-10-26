@@ -65,6 +65,12 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <AgentQuitFromTouchingBlockType>
     <Block type="diamond_block" />
     </AgentQuitFromTouchingBlockType>
+    <!--
+    <VideoProducer>
+    <Width>''' + "1920" + '''</Width>
+    <Height>''' + "1200" + '''</Height>
+    </VideoProducer>
+    -->
     </AgentHandlers>
     </AgentSection>
     
