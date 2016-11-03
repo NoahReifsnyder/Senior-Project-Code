@@ -73,43 +73,58 @@ def getYaw():
         else:
             a=a +180
     a=-1*a
+    
     return a
 
+def getRelYaw(yaw):
+    dyaw=(AI.yaw+180)-(yaw+180)
+    dyaw2=(yaw+180)-(AI.yaw+180)
+    if(math.fabs(dyaw)<math.fabs(dyaw2)):
+        return -dyaw
+    return dyaw2
 
 def turn(yaw):
-    agent_host.sendCommand("Move 0")
+    relYaw=getRelYaw(yaw)
+    print relYaw
     velocity = 1
-    dyaw=(AI.yaw+180)-(yaw+180)
-    i=0
-    while(i<3):
-        i=i+1
-        agent_host.sendCommand("turn "+str(velocity))
-        while(dyaw<0):
-            #print AI.yaw
+    if(relYaw<0):
+        velocity=-1
+    newVel=velocity
+    agent_host.sendCommand("turn "+str(velocity))
+    if(relYaw>0):
+        while(relYaw>0):
+            if(newVel!=velocity):
+                velocity=newVel
+                agent_host.sendCommand("turn "+str(velocity))
             world_state = agent_host.getWorldState()
             if world_state.number_of_observations_since_last_state > 0:
                 msg = world_state.observations[-1].text
                 ob = json.loads(msg)
                 if "Yaw" in ob:
                     AI.yaw = ob[u'Yaw']
-                    dyaw=(AI.yaw+180)-(yaw+180)
-        velocity=float(velocity)/(-2)
-        agent_host.sendCommand("turn "+str(velocity))
-        while(dyaw>0):
-            #print AI.yaw
+                    relYaw=getRelYaw(yaw)
+                    print relYaw
+                    aRelYaw=math.fabs(relYaw)
+                    if(aRelYaw<45):
+                        newVel=relYaw/45
+    else:
+        while(relYaw<0):
+            if(newVel!=velocity):
+                velocity=newVel
+                agent_host.sendCommand("turn "+str(velocity))
             world_state = agent_host.getWorldState()
             if world_state.number_of_observations_since_last_state > 0:
                 msg = world_state.observations[-1].text
                 ob = json.loads(msg)
                 if "Yaw" in ob:
                     AI.yaw = ob[u'Yaw']
-                    dyaw=(AI.yaw+180)-(yaw+180)
-        
-        agent_host.sendCommand("turn 0")
-        velocity=float(velocity)/(-2)
-    print str(dyaw)+" "+str(AI.yaw)+" "+str(yaw)
-    agent_host.sendCommand("Move 1")
+                    relYaw=getRelYaw(yaw)
+                    aRelYaw=math.fabs(relYaw)
+                    print relYaw
+                    if(aRelYaw<45):
+                        newVel=relYaw/45
 
+    agent_host.sendCommand("turn 0")
     
 def find_player(grid):
     
@@ -221,6 +236,7 @@ print "Mission running ",
 
 # Loop until mission ends:
 if role == 0:
+    time.sleep(5)
     plan = None
     AI.yaw=0
     while world_state.is_mission_running:
@@ -262,19 +278,22 @@ if role == 0:
                     agent_host.sendCommand("Move 1")
                     pEntity.move=1
                 yaw=getYaw()
-                dyaw=(AI.yaw+180)-(yaw+180)
-                if(dyaw**2>4):
+                relYaw=getRelYaw(yaw)
+                aRelYaw=math.fabs(relYaw)
+                print aRelYaw
+                if(aRelYaw>10):
                     find_player(ob.get(u'floorGrid', 0))
                 #plan.reverse()
                 #agent_host.sendCommand(plan.pop())
             elif pEntity.flag == 2:
                 found_player()
+                print("we stopped")
 
 
 else:
     while world_state.is_mission_running:
         sys.stdout.write(".")
-        time.sleep(0.1)
+        time.sleep(20)
         world_state = agent_host.getWorldState()
         for error in world_state.errors:
             print "Error:",error.text

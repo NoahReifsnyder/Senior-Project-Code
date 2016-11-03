@@ -6,7 +6,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <ServerSection>
     <ServerInitialConditions>
     <Time>
-    <StartTime>18000</StartTime>
+    <StartTime>1000</StartTime>
     <AllowPassageOfTime>false</AllowPassageOfTime>
     </Time>
     <Weather>clear</Weather>
@@ -45,9 +45,8 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <AgentHandlers>
     <ObservationFromChat />
     <ObservationFromNearbyEntities>
-    <Range name="Nearby" xrange="2" yrange="2" zrange="2" />
-    <Range name="Mob" xrange="10" yrange="2" zrange="10" update_frequency="100"/>
-    <Range name="Player" xrange="100" yrange="2" zrange="100" update_frequency="100"/>
+    <Range name="Nearby" xrange="2" yrange="2" zrange="2" update_frequency="2"/>
+    <Range name="Player" xrange="50" yrange="2" zrange="50" update_frequency="20"/>
     </ObservationFromNearbyEntities>
     <ObservationFromFullStats/>
     <ObservationFromGrid>
