@@ -49,6 +49,13 @@ AI.yaw=0
 moblist=[]
 
 
+def compare (mob, mob2):
+    if distToEnt(mob, pEntity)<distToEnt(mob2, pEntity):
+        return -1
+    else:
+        return 1
+    return 0
+
 def distToEnt(entity, entity2):
     dx=entity.x-entity2.x
     dz=entity.z-entity2.z
@@ -278,30 +285,34 @@ if role == 0:
             
             if "Mob" in ob:
                 entities = [EntityInfo(**k) for k in ob["Mob"]]
+                count=0
                 for mob in moblist:
                     mob.seen=False
+                    mob.new=False
                 for ent in entities:
                     if ent.name == "Zombie":
-                        print "hi"
+                        count=count+1
                         mob=Entity(ent.x,ent.y,ent.z)
                         inList=False
-                        loc=2
-                        for ent in moblist:
-                            if(distToEnt(mob,ent)<loc):
-                                inList=True
-                                mob.id=ent.id
-                                loc=distToEnt(mob,ent)
+                        loc=5
+                        for entity in moblist:
+                             if not entity.new:
+                                if(distToEnt(mob,entity)<loc):
+                                    inList=True
+                                    mob.id=entity.id
+                                    loc=distToEnt(mob,entity)
                         if inList:
-                            for ent in moblist:
-                                if(mob.id==ent.id):
-                                    ent.x=mob.x
-                                    ent.z=mob.z
-                                    ent.y=mob.y
-                                    ent.seen=True
+                            for entity in moblist:
+                                if(mob.id==entity.id):
+                                    entity.x=mob.x
+                                    entity.z=mob.z
+                                    entity.y=mob.y
+                                    entity.seen=True
                         else:
                             mob.id=idCount
                             idCount=idCount+1
                             mob.seen=True
+                            mob.new=True
                             moblist.append(mob)
                         if(distToEnt(mob,pEntity)<distance):
                             distance=distToEnt(mob, pEntity)
@@ -361,8 +372,11 @@ if role == 0:
                 attacking=True
                 found_Entity(target)
 
+            moblist.sort(compare)
+            if count>0:
+                print count
             for mob in moblist:
-                print mob.id
+                print str(mob.id)+" "+str(distToEnt(mob, pEntity))
             print "\n\n\n\n"
 
 
