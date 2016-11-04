@@ -249,6 +249,7 @@ if role == 0:
     AI.flag=-1
     target=AI
     distance=10
+    idCount=0
     while world_state.is_mission_running:
         world_state = agent_host.getWorldState()
         if world_state.number_of_observations_since_last_state > 0:
@@ -277,14 +278,36 @@ if role == 0:
             
             if "Mob" in ob:
                 entities = [EntityInfo(**k) for k in ob["Mob"]]
+                for mob in moblist:
+                    mob.seen=False
                 for ent in entities:
                     if ent.name == "Zombie":
+                        print "hi"
                         mob=Entity(ent.x,ent.y,ent.z)
-                        
+                        inList=False
+                        loc=2
+                        for ent in moblist:
+                            if(distToEnt(mob,ent)<loc):
+                                inList=True
+                                mob.id=ent.id
+                                loc=distToEnt(mob,ent)
+                        if inList:
+                            for ent in moblist:
+                                if(mob.id==ent.id):
+                                    ent.x=mob.x
+                                    ent.z=mob.z
+                                    ent.y=mob.y
+                                    ent.seen=True
+                        else:
+                            mob.id=idCount
+                            idCount=idCount+1
+                            mob.seen=True
+                            moblist.append(mob)
                         if(distToEnt(mob,pEntity)<distance):
                             distance=distToEnt(mob, pEntity)
                             target=mob
                             AI.flag=3
+                moblist=[ent for ent in moblist if ent.seen]
             
             if "Nearby" in ob:
                 entities = [EntityInfo(**k) for k in ob["Nearby"]]
@@ -302,8 +325,6 @@ if role == 0:
                         if target.x == ent.x and target.z==ent.z:
                             AI.flag = 4
                             
-                            
-            print AI.flag
             if AI.flag==1 and attacking:
                 agent_host.sendCommand("attack 0")
                 attacking=False
@@ -325,7 +346,6 @@ if role == 0:
 
             elif AI.flag == 2:
                 found_Entity(pEntity)
-                print("we stopped")
             elif AI.flag == 3:
                 yaw=getYaw(target)
                 relYaw=getRelYaw(yaw)
@@ -340,6 +360,10 @@ if role == 0:
                 agent_host.sendCommand("attack 1")
                 attacking=True
                 found_Entity(target)
+
+            for mob in moblist:
+                print mob.id
+            print "\n\n\n\n"
 
 
 
