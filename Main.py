@@ -39,27 +39,34 @@ from datetime import datetime
 
 
 from collections import namedtuple
-EntityInfo = namedtuple('EntityInfo', 'x, y, z, name')
-EntityInfo.__new__.__defaults__ = (0, 0, 0, "")
-
-pEntity = Entity(0, 0, 0, 0)
-pEntity.move=0
-AI = Entity(0, 0, 0, 0)
-del AI.flag
+EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
+EntityInfo.__new__.__defaults__ = (0, 0, 0, "", 0)
+pEntity = Entity( 0, 0, 0)
+AI = Entity( 0, 0, 0)
+AI.move=0
+AI.flag=-1
 AI.yaw=0
+moblist=[]
 
 
+def distToEnt(entity, entity2):
+    dx=entity.x-entity2.x
+    dz=entity.z-entity2.z
+    return (dx**2+dz**2)**.5
 
-def found_player():
+def found_Entity(entity):
     agent_host.sendCommand("Move 0")
-    pEntity.move=0
-    print("found")
+    yaw=(getYaw(entity))
+    relYaw=getRelYaw(yaw)
+    aRelYaw=math.fabs(relYaw)
+    if (aRelYaw>5):
+        turn(yaw)
     return
 
 
-def getYaw():
-    dx=pEntity.x-AI.x
-    dz=pEntity.z-AI.z
+def getYaw(entity):
+    dx=entity.x-AI.x
+    dz=entity.z-AI.z
     a=0
     if(dz!=0):
         a=math.atan(dx/dz)*180/math.pi
@@ -77,15 +84,16 @@ def getYaw():
     return a
 
 def getRelYaw(yaw):
-    dyaw=(AI.yaw+180)-(yaw+180)
-    dyaw2=(yaw+180)-(AI.yaw+180)
-    if(math.fabs(dyaw)<math.fabs(dyaw2)):
-        return -dyaw
-    return dyaw2
+    dyaw=(yaw+180)-(AI.yaw+180)
+    if(math.fabs(dyaw)>180):
+        if(dyaw>0):
+            return 360-dyaw
+        else:
+            return 360+dyaw
+    return dyaw
 
 def turn(yaw):
     relYaw=getRelYaw(yaw)
-    print relYaw
     velocity = 1
     if(relYaw<0):
         velocity=-1
@@ -103,7 +111,6 @@ def turn(yaw):
                 if "Yaw" in ob:
                     AI.yaw = ob[u'Yaw']
                     relYaw=getRelYaw(yaw)
-                    print relYaw
                     aRelYaw=math.fabs(relYaw)
                     if(aRelYaw<45):
                         newVel=relYaw/45
@@ -120,16 +127,15 @@ def turn(yaw):
                     AI.yaw = ob[u'Yaw']
                     relYaw=getRelYaw(yaw)
                     aRelYaw=math.fabs(relYaw)
-                    print relYaw
                     if(aRelYaw<45):
                         newVel=relYaw/45
 
     agent_host.sendCommand("turn 0")
     
-def find_player(grid):
+def find_Entity(grid, entity):
     
     simple_grid = [[simplify_grid(grid, x, z) for x in range(-10, 10)] for z in range(-10, 10)]
-    yaw=getYaw()
+    yaw=getYaw(entity)
     turn(yaw)
     
     #take the one dimensional grid ordered x by z and then by y value and create a 2D array from it
@@ -137,8 +143,8 @@ def find_player(grid):
     #player will be at 0,0
 
     #set goal coordinate
-    goalx=pEntity.x-AI.x
-    goalz=pEntity.z-AI.z
+    goalx=entity.x-AI.x
+    goalz=entity.z-AI.z
     #simple_grid[int(pEntity.x)][int(pEntity.z)] = 3 This line broke code. Because moving and not updating.
     return 1#Follow.A_star_search(goalx, goalz, simple_grid)
 
@@ -236,15 +242,25 @@ print "Mission running ",
 
 # Loop until mission ends:
 if role == 0:
-    time.sleep(5)
+    time.sleep(2)
     plan = None
     AI.yaw=0
+    attacking=False
+    AI.flag=-1
+    target=AI
+    distance=10
     while world_state.is_mission_running:
-        pEntity.flag=3
         world_state = agent_host.getWorldState()
         if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
+            if "Player" in ob:
+                if AI.flag==3 or AI.flag==4:
+                    distance=20
+                else:
+                    distance=10
+                AI.flag=-1
+                target=AI
             if "Yaw" in ob:
                 AI.yaw = ob[u'Yaw']
         
@@ -252,42 +268,80 @@ if role == 0:
             if "Player" in ob:
                 entities = [EntityInfo(**k) for k in ob["Player"]]
                 for ent in entities:
-
                     if ent.name == "Typhoonizm":
-                        pEntity.flag = 1
+                        AI.flag = 1
                         pEntity.x = ent.x
                         pEntity.y = ent.y
                         pEntity.z = ent.z
 
+            
+            if "Mob" in ob:
+                entities = [EntityInfo(**k) for k in ob["Mob"]]
+                for ent in entities:
+                    if ent.name == "Zombie":
+                        mob=Entity(ent.x,ent.y,ent.z)
+                        
+                        if(distToEnt(mob,pEntity)<distance):
+                            distance=distToEnt(mob, pEntity)
+                            target=mob
+                            AI.flag=3
+            
             if "Nearby" in ob:
                 entities = [EntityInfo(**k) for k in ob["Nearby"]]
                 AI.x = entities[0].x
                 AI.y = entities[0].y
                 AI.z = entities[0].z
                 for ent in entities:
-                    if ent.name == "Typhoonizm":
-                        pEntity.flag = 2
+                    if ent.name == "Typhoonizm" and target==AI:
+                        AI.flag = 2
                         pEntity.x = ent.x
                         pEntity.y = ent.y
                         pEntity.z = ent.z
+                    elif ent.name == "Zombie":
+                        agent_host.sendCommand("attack 1") #for when zombies in way of target
+                        if target.x == ent.x and target.z==ent.z:
+                            AI.flag = 4
+                            
+                            
+            print AI.flag
+            if AI.flag==1 and attacking:
+                agent_host.sendCommand("attack 0")
+                attacking=False
 
-            if pEntity.flag == 0:
+            if AI.flag == -1:
                 lost_player()
-            elif pEntity.flag == 1:
-                if(pEntity.move==0):
-                    agent_host.sendCommand("Move 1")
-                    pEntity.move=1
-                yaw=getYaw()
+            elif AI.flag == 1:
+                yaw=getYaw(pEntity)
                 relYaw=getRelYaw(yaw)
                 aRelYaw=math.fabs(relYaw)
-                print aRelYaw
-                if(aRelYaw>10):
-                    find_player(ob.get(u'floorGrid', 0))
+                if(aRelYaw>5):
+                    turn(yaw)
+                    agent_host.sendCommand("Move 1")
+                    find_Entity(ob.get(u'floorGrid', 0), pEntity)
+                else:
+                    agent_host.sendCommand("Move 1")
                 #plan.reverse()
                 #agent_host.sendCommand(plan.pop())
-            elif pEntity.flag == 2:
-                found_player()
+
+            elif AI.flag == 2:
+                found_Entity(pEntity)
                 print("we stopped")
+            elif AI.flag == 3:
+                yaw=getYaw(target)
+                relYaw=getRelYaw(yaw)
+                aRelYaw=math.fabs(relYaw)
+                if(aRelYaw>10):
+                    turn(yaw)
+                    agent_host.sendCommand("Move 1")
+                    find_Entity(ob.get(u'floorGrid', 0), target)
+                else:
+                    agent_host.sendCommand("Move 1")
+            elif AI.flag == 4:
+                agent_host.sendCommand("attack 1")
+                attacking=True
+                found_Entity(target)
+
+
 
 
 else:

@@ -6,7 +6,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <ServerSection>
     <ServerInitialConditions>
     <Time>
-    <StartTime>1000</StartTime>
+    <StartTime>18000</StartTime>
     <AllowPassageOfTime>false</AllowPassageOfTime>
     </Time>
     <Weather>clear</Weather>
@@ -25,13 +25,12 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <DrawBlock x="4" y="9" z="4" type="redstone_block" />
     <DrawBlock x="4" y="8" z="4" type="air" />
     <DrawBlock x="4" y="7" z="4" type="diamond_block" />
+
+    <DrawBlock x="14" y="9" z="4" type="mob_spawner" variant="Zombie" />
+    <DrawBlock x="-6" y="9" z="4" type="mob_spawner" variant="Zombie" />
+    <DrawBlock x="4" y="9" z="14" type="mob_spawner" variant="Zombie" />
+    <!--<DrawBlock x="4" y="9" z="-6" type="mob_spawner" variant="Zombie" />-->
     
-    <!--
-    <DrawBlock x="114" y="9" z="-9" type="mob_spawner" variant="Skeleton" />
-    <DrawBlock x="-119" y="9" z="4" type="mob_spawner" variant="Skeleton" />
-    <DrawBlock x="114" y="9" z="17" type="mob_spawner" variant="Zombie" />
-    <DrawBlock x="117" y="9" z="4" type="mob_spawner" variant="Zombie" />
-    -->
     </DrawingDecorator>
     <ServerQuitWhenAnyAgentFinishes/>
     </ServerHandlers>
@@ -41,12 +40,20 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
     <Name>Burton</Name>
     <AgentStart>
     <Placement x="0.5" y="9.0" z="0.5"/>
+    <Inventory>
+        <InventoryItem slot="36" type="diamond_boots"/>
+        <InventoryItem slot="37" type="diamond_leggings"/>
+        <InventoryItem slot="38" type="diamond_chestplate"/>
+        <InventoryItem slot="39" type="diamond_helmet"/>
+        <InventoryItem slot="0" type="diamond_sword"/>
+    </Inventory>
     </AgentStart>
     <AgentHandlers>
     <ObservationFromChat />
     <ObservationFromNearbyEntities>
-    <Range name="Nearby" xrange="2" yrange="2" zrange="2" update_frequency="2"/>
-    <Range name="Player" xrange="50" yrange="2" zrange="50" update_frequency="20"/>
+    <Range name="Nearby" xrange="2" yrange="2" zrange="2" update_frequency="1"/>
+    <Range name="Player" xrange="50" yrange="2" zrange="50" update_frequency="1"/>
+    <Range name="Mob" xrange="20" yrange="2" zrange="20" update_frequency="1"/>
     </ObservationFromNearbyEntities>
     <ObservationFromFullStats/>
     <ObservationFromGrid>
