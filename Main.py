@@ -329,29 +329,31 @@ if role == 0:
             if "Mob" in ob:
                 entities = [EntityInfo(**k) for k in ob["Mob"]]
                 count=0
-                for mob in moblist:
-                    mob.seen=False
-                    mob.new=False
+                for m in moblist:
+                    m.seen=False
+                    m.new=False
                 for ent in entities:
                     if ent.name == "Zombie":
                         count=count+1
                         mob=Entity(ent.x,ent.y,ent.z)
                         inList=False
-                        loc=5
+                        loc=2
                         for entity in moblist:
-                             if not entity.new:
+                             if not entity.new and not entity.seen:
                                 if(distToEnt(mob,entity)<loc):
                                     inList=True
-                                    mob.id=entity.id
                                     loc=distToEnt(mob,entity)
+                                    mob.id=entity.id
+                        
                         if inList:
                             for entity in moblist:
-                                if(mob.id==entity.id):
+                                if mob.id==entity.id:
                                     entity.x=mob.x
                                     entity.z=mob.z
                                     entity.y=mob.y
                                     entity.seen=True
-                        else:
+                        
+                        if not inList:
                             mob.id=idCount
                             idCount=idCount+1
                             mob.seen=True
