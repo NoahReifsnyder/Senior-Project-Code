@@ -31,6 +31,7 @@ import Follow
 
 import MalmoPython
 import os
+import signal
 import sys
 import time
 import json
@@ -39,6 +40,28 @@ from datetime import datetime
 
 
 from collections import namedtuple
+
+
+def end():
+    print "Mission Ended"
+    output=""
+    if role==0:
+        for x in range (h):
+            output+=(str(learning[x][0])+","+str(learning[x][1])+"\n")
+        print output
+        table.write(output)
+    
+    table.close()
+    exit(0)
+
+def signal_handler(signal, frame):
+    print "\nMission Interrupted"
+    end()
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
+
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, "", 0)
 pEntity = Entity( 0, 0, 0)
@@ -47,6 +70,25 @@ AI.move=0
 AI.flag=-1
 AI.yaw=0
 moblist=[]
+table=open("LearningTable.txt" ,"w+")
+w,h=2,11
+learning=[[y for x in range(w)] for y in range(h)]
+input=table.readline()
+    #if input=="":
+if input=="":
+    for x in range(h):
+        learning[x][0]=x+5
+        learning[x][1]=0
+else:
+    x=0
+    while(input!=""):
+        a=input.split(",")
+        learning[x][0]=a[0]
+        learning[x][1]=a[1]
+        x=x+1
+print learning
+
+
 
 
 def compare (mob, mob2):
@@ -105,6 +147,7 @@ def turn(yaw):
     if(relYaw<0):
         velocity=-1
     newVel=velocity
+    c=0
     agent_host.sendCommand("turn "+str(velocity))
     if(relYaw>0):
         while(relYaw>0):
@@ -389,5 +432,7 @@ else:
         world_state = agent_host.getWorldState()
         for error in world_state.errors:
             print "Error:",error.text
-print "Mission ended"
+end()
+
+
 # Mission has ended.
