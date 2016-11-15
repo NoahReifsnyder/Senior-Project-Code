@@ -36,13 +36,14 @@ import sys
 import time
 import json
 import math
+import random
 from datetime import datetime
 
 
 from collections import namedtuple
 
 
-def end():
+def end():#writing at end of mission
     print "Mission Ended"
     output=""
     if role==0:
@@ -58,7 +59,7 @@ def signal_handler(signal, frame):
     print "\nMission Interrupted"
     end()
 
-signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)#catching ctrl-c to insure write at the end of the run
 
 
 
@@ -74,7 +75,6 @@ table=open("LearningTable.txt" ,"w+")
 w,h=2,11
 learning=[[y for x in range(w)] for y in range(h)]
 input=table.readline()
-    #if input=="":
 if input=="":
     for x in range(h):
         learning[x][0]=x+5
@@ -224,7 +224,8 @@ def lost_player():
     print("lost")
     return
 
-
+def update():
+    return
 
 # Create default Malmo objects:
 
@@ -298,18 +299,16 @@ if role == 0:
     attacking=False
     AI.flag=-1
     target=AI
-    distance=10
+    lastTarget=target
+    distance=0
     idCount=0
+    go=False
     while world_state.is_mission_running:
         world_state = agent_host.getWorldState()
         if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
             if "Player" in ob:
-                if AI.flag==3 or AI.flag==4:
-                    distance=20
-                else:
-                    distance=10
                 AI.flag=-1
                 target=AI
             if "Yaw" in ob:
@@ -329,6 +328,7 @@ if role == 0:
             if "Mob" in ob:
                 entities = [EntityInfo(**k) for k in ob["Mob"]]
                 count=0
+                targetAlive=False
                 for m in moblist:
                     m.seen=False
                     m.new=False
@@ -352,19 +352,53 @@ if role == 0:
                                     entity.z=mob.z
                                     entity.y=mob.y
                                     entity.seen=True
-                        
                         if not inList:
                             mob.id=idCount
                             idCount=idCount+1
                             mob.seen=True
                             mob.new=True
                             moblist.append(mob)
-                        if(distToEnt(mob,pEntity)<distance):
-                            distance=distToEnt(mob, pEntity)
+                    if go:
+                        if mob.id==target.id:
+                            targetAlive=True
+                                
+                if go and not targetAlive:
+                    go=Flase
+                    update(distance)
+                    target=AI
+                    
+
+    
+                moblist=[ent for ent in moblist if ent.seen]
+                moblist.sort(compare)
+                
+                
+                if target==AI:
+                    for mob in moblist:#pick target based on table.
+                        distance=distToEnt(mob, pEntity)
+                        distance=math.floor(distance)
+                        go=False
+                        if distance<16 and distance>=5:
+                            choice=learning[int(distance)-5][1]
+                            var=random.randint(0,100)
+                            if choice>0:#greedy epsilon choice
+                                if var<90:
+                                    go=True
+                            elif choice<0:
+                                if var<=10:
+                                    go=True
+                            else:
+                                if var>50:
+                                    go=True
+                        elif dist<5:
+                            go=True
+                                        
+                        if go:
+                            print "go"
                             target=mob
                             AI.flag=3
-                moblist=[ent for ent in moblist if ent.seen]
-            
+                            break
+                            
             if "Nearby" in ob:
                 entities = [EntityInfo(**k) for k in ob["Nearby"]]
                 AI.x = entities[0].x
