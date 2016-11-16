@@ -50,6 +50,7 @@ def end():#writing at end of mission
         for x in range (h):
             output+=(str(learning[x][0])+","+str(learning[x][1])+"\n")
         print output
+        table.seek(0)
         table.write(output)
     
     table.close()
@@ -70,8 +71,12 @@ AI = Entity( 0, 0, 0)
 AI.move=0
 AI.flag=-1
 AI.yaw=0
+AI.id=-1
 moblist=[]
-table=open("LearningTable.txt" ,"w+")
+try:
+    table=open("LearningTable.txt" ,"r+")
+except:
+    table=open("LearningTable.txt" ,"w+")
 w,h=2,11
 learning=[[y for x in range(w)] for y in range(h)]
 input=table.readline()
@@ -83,9 +88,10 @@ else:
     x=0
     while(input!=""):
         a=input.split(",")
-        learning[x][0]=a[0]
-        learning[x][1]=a[1]
+        learning[x][0]=int(a[0])
+        learning[x][1]=int(a[1][:-1])
         x=x+1
+        input=table.readline()
 print learning
 
 
@@ -147,7 +153,8 @@ def turn(yaw):
     if(relYaw<0):
         velocity=-1
     newVel=velocity
-    c=0
+    if math.fabs(relYaw)>90:
+        agent_host.sendCommand("move 0")
     agent_host.sendCommand("turn "+str(velocity))
     if(relYaw>0):
         while(relYaw>0):
@@ -181,6 +188,7 @@ def turn(yaw):
                         newVel=relYaw/45
 
     agent_host.sendCommand("turn 0")
+    agent_host.sendCommand("move 1")
     
 def find_Entity(grid, entity):
     
@@ -224,7 +232,16 @@ def lost_player():
     print("lost")
     return
 
-def update():
+def update(distance): #update the table
+    i=0
+    for mob in moblist:
+        if (distToEnt(mob, pEntity)<2):
+            i=i-1
+    if distToEnt(AI, pEntity)>20:
+        i=i-1
+    else:
+        i=i+1
+    learning[int(distance)-5][1]=learning[int(distance)-5][1]+i
     return
 
 # Create default Malmo objects:
@@ -299,7 +316,6 @@ if role == 0:
     attacking=False
     AI.flag=-1
     target=AI
-    lastTarget=target
     distance=0
     idCount=0
     go=False
@@ -308,9 +324,6 @@ if role == 0:
         if world_state.number_of_observations_since_last_state > 0:
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
-            if "Player" in ob:
-                AI.flag=-1
-                target=AI
             if "Yaw" in ob:
                 AI.yaw = ob[u'Yaw']
         
@@ -358,12 +371,14 @@ if role == 0:
                             mob.seen=True
                             mob.new=True
                             moblist.append(mob)
+                for mob in moblist:
                     if go:
                         if mob.id==target.id:
+                            print "alive"
                             targetAlive=True
                                 
                 if go and not targetAlive:
-                    go=Flase
+                    go=False
                     update(distance)
                     target=AI
                     
@@ -390,15 +405,17 @@ if role == 0:
                             else:
                                 if var>50:
                                     go=True
-                        elif dist<5:
+                        elif distance<5:
                             go=True
                                         
-                        if go:
+                        if go and not targetAlive:
                             print "go"
                             target=mob
                             AI.flag=3
                             break
-                            
+                elif go:
+                    AI.flag=3
+    
             if "Nearby" in ob:
                 entities = [EntityInfo(**k) for k in ob["Nearby"]]
                 AI.x = entities[0].x
